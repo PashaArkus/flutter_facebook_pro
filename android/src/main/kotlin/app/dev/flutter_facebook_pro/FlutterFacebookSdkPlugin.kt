@@ -78,6 +78,26 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
             "getPlatformVersion" -> {
                 result.success("Android ${android.os.Build.VERSION.RELEASE}")
             }
+            "getDeepLinkUrl" -> {
+                result.success(deepLinkUrl)
+            }
+            "activateApp" -> {
+                appEventsLogger.logEvent(AppEventsConstants.EVENT_NAME_ACTIVATED_APP)
+            }
+            "logCompleteRegistration" -> {
+                val args = call.arguments as HashMap<String, Any>
+                val params = Bundle()
+                params.putString(AppEventsConstants.EVENT_PARAM_REGISTRATION_METHOD, args["registrationMethod"].toString())
+                appEventsLogger.logEvent(AppEventsConstants.EVENT_NAME_COMPLETED_REGISTRATION, params)
+            }
+            "logSearch" -> {
+                val args = call.arguments as HashMap<String, Any>
+                logSearchEvent(args["contentType"].toString(), args["contentData"].toString(), args["contentId"].toString(), args["searchString"].toString(), args["success"].toString().toBoolean())
+            }
+            "logInitiateCheckout" -> {
+                val args = call.arguments as HashMap<String, Any>
+                logInitiateCheckoutEvent(args["contentData"].toString(), args["contentId"].toString(), args["contentType"].toString(), args["numItems"].toString().toInt(), args["paymentInfoAvailable"].toString().toBoolean(), args["currency"].toString(), args["totalPrice"].toString().toDouble())
+            }
             "clearUserData" -> handleClearUserData(call, result)
             "setUserData" -> handleSetUserData(call, result)
             "clearUserID" -> handleClearUserId(call, result)
@@ -94,7 +114,43 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
             else -> result.notImplemented()
         }
     }
+    private fun logGenericEvent(args : HashMap<String, Any>){
+        val eventName = args["eventName"] as? String
+        val valueToSum = args["valueToSum"] as? Double
+        val parameters = args["parameters"] as? HashMap<String, Any>
+        if (valueToSum != null && parameters != null) {
+            val parameterBundle = createBundleFromMap(args["parameters"] as HashMap<String, Any>)
+            appEventsLogger.logEvent(eventName, valueToSum, parameterBundle)
+        }else if(parameters != null){
+            val parameterBundle = createBundleFromMap(args["parameters"] as HashMap<String, Any>)
+            appEventsLogger.logEvent(eventName, parameterBundle)
+        }else if(valueToSum != null){
+            appEventsLogger.logEvent(eventName, valueToSum)
+        }else{
+            appEventsLogger.logEvent(eventName)
+        }
+    }
 
+    private fun logInitiateCheckoutEvent(contentData: String?, contentId: String?, contentType: String?, numItems: Int, paymentInfoAvailable: Boolean, currency: String?, totalPrice: Double) {
+        val params = Bundle()
+        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT, contentData)
+        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT_ID, contentId)
+        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT_TYPE, contentType)
+        params.putInt(AppEventsConstants.EVENT_PARAM_NUM_ITEMS, numItems)
+        params.putInt(AppEventsConstants.EVENT_PARAM_PAYMENT_INFO_AVAILABLE, if (paymentInfoAvailable) 1 else 0)
+        params.putString(AppEventsConstants.EVENT_PARAM_CURRENCY, currency)
+        appEventsLogger.logEvent(AppEventsConstants.EVENT_NAME_INITIATED_CHECKOUT, totalPrice, params)
+    }
+
+    private fun logSearchEvent(contentType: String, contentData: String, contentId: String, searchString: String, success: Boolean) {
+        val params = Bundle()
+        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT_TYPE, contentType)
+        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT, contentData)
+        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT_ID, contentId)
+        params.putString(AppEventsConstants.EVENT_PARAM_SEARCH_STRING, searchString)
+        params.putInt(AppEventsConstants.EVENT_PARAM_SUCCESS, if (success) 1 else 0)
+        appEventsLogger.logEvent(AppEventsConstants.EVENT_NAME_SEARCHED, params)
+    }
     private fun handleClearUserData(call: MethodCall, result: Result) {
         AppEventsLogger.clearUserData()
         result.success(null)
@@ -144,9 +200,9 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
     }
 
     private fun handleLogEvent(call: MethodCall, result: Result) {
-        val eventName = call.argument("name") as? String
+        val eventName = call.argument("eventName") as? String
         val parameters = call.argument("parameters") as? Map<String, Object>
-        val valueToSum = call.argument("_valueToSum") as? Double
+        val valueToSum = call.argument("valueToSum") as? Double
 
         if (valueToSum != null && parameters != null) {
             val parameterBundle = createBundleFromMap(parameters)

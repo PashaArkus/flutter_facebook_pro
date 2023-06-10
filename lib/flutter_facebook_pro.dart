@@ -16,8 +16,7 @@ class FlutterFacebookPro {
   /// Method Channel Initilization to register method calls
   static const MethodChannel _channel =
   const MethodChannel('flutter_facebook_sdk/methodChannel');
-  static const eventNameCompletedRegistration =
-      'fb_mobile_complete_registration';
+
   static const eventNameViewedContent = 'fb_mobile_content_view';
   static const eventNameRated = 'fb_mobile_rate';
   static const eventNameInitiatedCheckout = 'fb_mobile_initiated_checkout';
@@ -66,10 +65,7 @@ class FlutterFacebookPro {
   /// });
   /// ```
   Stream<String>? get onDeepLinkReceived {
-    if (_onDeepLinkReceived == null) {
-      _onDeepLinkReceived =
-          _eventChannel.receiveBroadcastStream().cast<String>();
-    }
+    _onDeepLinkReceived ??= _eventChannel.receiveBroadcastStream().cast<String>();
     return _onDeepLinkReceived;
   }
 

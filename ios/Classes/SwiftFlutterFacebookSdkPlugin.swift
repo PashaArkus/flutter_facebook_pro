@@ -169,16 +169,68 @@ public class SwiftFlutterFacebookSdkPlugin: NSObject, FlutterPlugin, FlutterStre
         eventSink(link)
         
     }
-    
-    
-    
+
+    private func handleClearUserData(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+            AppEvents.shared.clearUserData()
+            result(nil)
+        }
+
+    private func handleSetUserData(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        let arguments = call.arguments as? [String: Any] ?? [String: Any]()
+
+        AppEvents.shared.setUserData(arguments["email"] as? String, forType: FBSDKAppEventUserDataType.email)
+        AppEvents.shared.setUserData(arguments["firstName"] as? String, forType: FBSDKAppEventUserDataType.firstName)
+        AppEvents.shared.setUserData(arguments["lastName"] as? String, forType: FBSDKAppEventUserDataType.lastName)
+        AppEvents.shared.setUserData(arguments["phone"] as? String, forType: FBSDKAppEventUserDataType.phone)
+        AppEvents.shared.setUserData(arguments["dateOfBirth"] as? String, forType: FBSDKAppEventUserDataType.dateOfBirth)
+        AppEvents.shared.setUserData(arguments["gender"] as? String, forType: FBSDKAppEventUserDataType.gender)
+        AppEvents.shared.setUserData(arguments["city"] as? String, forType: FBSDKAppEventUserDataType.city)
+        AppEvents.shared.setUserData(arguments["state"] as? String, forType: FBSDKAppEventUserDataType.state)
+        AppEvents.shared.setUserData(arguments["zip"] as? String, forType: FBSDKAppEventUserDataType.zip)
+        AppEvents.shared.setUserData(arguments["country"] as? String, forType: FBSDKAppEventUserDataType.country)
+
+        result(nil)
+    }
+
+    private func handleClearUserID(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        AppEvents.shared.userID = nil
+        result(nil)
+    }
+
+    private func handleFlush(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        AppEvents.shared.flush()
+        result(nil)
+    }
+
+    private func handleGetApplicationId(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        result(Settings.shared.appID)
+    }
+
+    private func handleHandleGetAnonymousId(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        result(AppEvents.shared.anonymousID)
+    }
+
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "getPlatformVersion":
             result("iOS " + UIDevice.current.systemVersion)
         case "getDeepLinkUrl":
-            
             result(deepLinkUrl)
+        case "clearUserData":
+            handleClearUserData(call, result: result)
+            break
+        case "setUserData":
+            handleSetUserData(call, result: result)
+            break
+        case "getApplicationId":
+            handleGetApplicationId(call, result: result)
+            break
+        case "clearUserID":
+            handleClearUserID(call, result: result)
+            break
+        case "flush":
+                    handleFlush(call, result: result)
+                    break
         case "logViewedContent", "logAddToCart", "logAddToWishlist":
             guard let args = call.arguments else {
                 result(false)
@@ -285,7 +337,9 @@ public class SwiftFlutterFacebookSdkPlugin: NSObject, FlutterPlugin, FlutterStre
             if let myArgs = args as? [String: Any]{
                 logGenericEvent(args: myArgs)
             }
-            
+        case "getAnonymousId":
+            handleHandleGetAnonymousId(call, result: result)
+            break
         default:
             result(FlutterMethodNotImplemented)
         }
