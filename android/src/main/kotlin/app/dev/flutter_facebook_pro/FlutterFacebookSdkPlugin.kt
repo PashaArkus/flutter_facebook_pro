@@ -37,22 +37,16 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
     private lateinit var registrar: Registrar
     private lateinit var methodChannel: MethodChannel
     private lateinit var eventChannel: EventChannel
-    private lateinit var logger: AppEventsLogger
-
+    private lateinit var appEventsLogger: AppEventsLogger
+    private lateinit var anonymousId: String
 
     private var deepLinkUrl: String = "Saad Farhan"
     private var PLATFORM_CHANNEL: String = "flutter_facebook_sdk/methodChannel"
     private var EVENTS_CHANNEL: String = "flutter_facebook_sdk/eventChannel"
     private var queuedLinks: List<String> = emptyList()
     private var eventSink: EventSink? = null
-    private var context: Context? = null
+    private lateinit var context: Context
     private var activityPluginBinding: ActivityPluginBinding? = null
-
-    //  fun registerWith(registrar: Registrar) {
-    //    val plugin = FlutterFacebookSdkPlugin()
-    //    methodChannel = MethodChannel(registrar.messenger(), PLATFORM_CHANNEL)
-    //    methodChannel.setMethodCallHandler(this)
-    //  }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         methodChannel = MethodChannel(flutterPluginBinding.binaryMessenger, PLATFORM_CHANNEL)
@@ -60,9 +54,9 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
 
         eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, EVENTS_CHANNEL)
         eventChannel.setStreamHandler(this)
-
         context = flutterPluginBinding.applicationContext
-        logger = context as? Context?.let { AppEventsLogger.newLogger(it) }
+        appEventsLogger = AppEventsLogger.newLogger(context)
+        anonymousId = AppEventsLogger.getAnonymousAppDeviceGUID(flutterPluginBinding.applicationContext)
     }
 
 
@@ -79,131 +73,113 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
         eventSink = null
     }
 
-    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+    override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
+            "clearUserData" -> handleClearUserData(call, result)
+            "setUserData" -> handleSetUserData(call, result)
+            "clearUserID" -> handleClearUserId(call, result)
+            "flush" -> handleFlush(call, result)
+            "getApplicationId" -> handleGetApplicationId(call, result)
+            "logEvent" -> handleLogEvent(call, result)
+            "logPushNotificationOpen" -> handlePushNotificationOpen(call, result)
+            "setUserID" -> handleSetUserId(call, result)
+            "setAutoLogAppEventsEnabled" -> handleSetAutoLogAppEventsEnabled(call, result)
+            "setDataProcessingOptions" -> handleSetDataProcessingOptions(call, result)
+            "getAnonymousId" -> handleGetAnonymousId(call, result)
+            "logPurchase" -> handlePurchased(call, result)
+            "setAdvertiserTracking" -> handleSetAdvertiserTracking(call, result)
+            "initFbSdk" -> initFbSdk(result)
 
-            "getPlatformVersion" -> {
-                result.success("Android ${android.os.Build.VERSION.RELEASE}")
-            }
-            "getDeepLinkUrl" -> {
-                result.success(deepLinkUrl)
-            }
-            "logViewedContent", "logAddToCart", "logAddToWishlist" -> {
-                val args = call.arguments as HashMap<String, Any>
-                logEvent(args["contentType"].toString(), args["contentData"].toString(), args["contentId"].toString(), args["currency"].toString(), args["price"].toString().toDouble(), call.method)
-            }
-            "activateApp" -> {
-                logger.logEvent(AppEventsConstants.EVENT_NAME_ACTIVATED_APP)
-            }
-            "logCompleteRegistration" -> {
-                val args = call.arguments as HashMap<String, Any>
-                val params = Bundle()
-                params.putString(AppEventsConstants.EVENT_PARAM_REGISTRATION_METHOD, args["registrationMethod"].toString())
-                logger.logEvent(AppEventsConstants.EVENT_NAME_COMPLETED_REGISTRATION, params)
-            }
-            "logPurchase" -> {
-                val args = call.arguments as HashMap<String, Any>
-                logPurchase(args["amount"].toString().toDouble(), args["currency"].toString(), args["parameters"] as HashMap<String, String>)
-            }
-            "logSearch" -> {
-                val args = call.arguments as HashMap<String, Any>
-                logSearchEvent(args["contentType"].toString(), args["contentData"].toString(), args["contentId"].toString(), args["searchString"].toString(), args["success"].toString().toBoolean())
-            }
-            "logInitiateCheckout" -> {
-                val args = call.arguments as HashMap<String, Any>
-                logInitiateCheckoutEvent(args["contentData"].toString(), args["contentId"].toString(), args["contentType"].toString(), args["numItems"].toString().toInt(), args["paymentInfoAvailable"].toString().toBoolean(), args["currency"].toString(), args["totalPrice"].toString().toDouble())
-            }
-            "logEvent" -> {
-                val args = call.arguments as HashMap<String, Any>
-                logGenericEvent(args)
-            }
-            else -> {
-                result.notImplemented()
-            }
+            else -> result.notImplemented()
         }
     }
 
-    private fun logGenericEvent(args : HashMap<String, Any>){
-        val eventName = args["eventName"] as? String
-        val valueToSum = args["valueToSum"] as? Double
-        val parameters = args["parameters"] as? HashMap<String, Any>
+    private fun handleClearUserData(call: MethodCall, result: Result) {
+        AppEventsLogger.clearUserData()
+        result.success(null)
+    }
+
+    private fun handleSetUserData(call: MethodCall, result: Result) {
+        val parameters = call.argument("parameters") as? Map<String, Object>
+        val parameterBundle = createBundleFromMap(parameters)
+
+        AppEventsLogger.setUserData(
+                parameterBundle?.getString("email"),
+                parameterBundle?.getString("firstName"),
+                parameterBundle?.getString("lastName"),
+                parameterBundle?.getString("phone"),
+                parameterBundle?.getString("dateOfBirth"),
+                parameterBundle?.getString("gender"),
+                parameterBundle?.getString("city"),
+                parameterBundle?.getString("state"),
+                parameterBundle?.getString("zip"),
+                parameterBundle?.getString("country")
+        )
+
+        result.success(null)
+    }
+
+    private fun handleClearUserId(call: MethodCall, result: Result) {
+        AppEventsLogger.clearUserID()
+        result.success(null)
+    }
+
+    private fun handleFlush(call: MethodCall, result: Result) {
+        appEventsLogger.flush()
+        result.success(null)
+    }
+
+    private fun handleGetApplicationId(call: MethodCall, result: Result) {
+        result.success(appEventsLogger.applicationId)
+    }
+
+    private fun handleGetAnonymousId(call: MethodCall, result: Result) {
+        result.success(anonymousId)
+    }
+
+    //not an android implementation as of yet
+    private fun handleSetAdvertiserTracking(call: MethodCall, result: Result) {
+        result.success(null);
+    }
+
+    private fun handleLogEvent(call: MethodCall, result: Result) {
+        val eventName = call.argument("name") as? String
+        val parameters = call.argument("parameters") as? Map<String, Object>
+        val valueToSum = call.argument("_valueToSum") as? Double
+
         if (valueToSum != null && parameters != null) {
-            val parameterBundle = createBundleFromMap(args["parameters"] as HashMap<String, Any>)
-            logger.logEvent(eventName, valueToSum, parameterBundle)
-        }else if(parameters != null){
-            val parameterBundle = createBundleFromMap(args["parameters"] as HashMap<String, Any>)
-            logger.logEvent(eventName, parameterBundle)
-        }else if(valueToSum != null){
-            logger.logEvent(eventName, valueToSum)
-        }else{
-            logger.logEvent(eventName)
+            val parameterBundle = createBundleFromMap(parameters)
+            appEventsLogger.logEvent(eventName, valueToSum, parameterBundle)
+        } else if (valueToSum != null) {
+            appEventsLogger.logEvent(eventName, valueToSum)
+        } else if (parameters != null) {
+            val parameterBundle = createBundleFromMap(parameters)
+            appEventsLogger.logEvent(eventName, parameterBundle)
+        } else {
+            appEventsLogger.logEvent(eventName)
         }
+
+        result.success(null)
     }
 
-    private fun logInitiateCheckoutEvent(contentData: String?, contentId: String?, contentType: String?, numItems: Int, paymentInfoAvailable: Boolean, currency: String?, totalPrice: Double) {
-        val params = Bundle()
-        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT, contentData)
-        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT_ID, contentId)
-        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT_TYPE, contentType)
-        params.putInt(AppEventsConstants.EVENT_PARAM_NUM_ITEMS, numItems)
-        params.putInt(AppEventsConstants.EVENT_PARAM_PAYMENT_INFO_AVAILABLE, if (paymentInfoAvailable) 1 else 0)
-        params.putString(AppEventsConstants.EVENT_PARAM_CURRENCY, currency)
-        logger.logEvent(AppEventsConstants.EVENT_NAME_INITIATED_CHECKOUT, totalPrice, params)
-    }
+    private fun handlePushNotificationOpen(call: MethodCall, result: Result) {
+        val action = call.argument("action") as? String
+        val payload = call.argument("payload") as? Map<String, Object>
+        val payloadBundle = createBundleFromMap(payload)!!
 
-    private fun logSearchEvent(contentType: String, contentData: String, contentId: String, searchString: String, success: Boolean) {
-        val params = Bundle()
-        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT_TYPE, contentType)
-        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT, contentData)
-        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT_ID, contentId)
-        params.putString(AppEventsConstants.EVENT_PARAM_SEARCH_STRING, searchString)
-        params.putInt(AppEventsConstants.EVENT_PARAM_SUCCESS, if (success) 1 else 0)
-        logger.logEvent(AppEventsConstants.EVENT_NAME_SEARCHED, params)
-    }
-
-    private fun logEvent(contentType: String, contentData: String, contentId: String, currency: String, price: Double, type: String) {
-        val params = Bundle()
-        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT_TYPE, contentType)
-        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT, contentData)
-        params.putString(AppEventsConstants.EVENT_PARAM_CONTENT_ID, contentId)
-        params.putString(AppEventsConstants.EVENT_PARAM_CURRENCY, currency)
-        when (type) {
-            "logViewedContent" -> {
-                logger.logEvent(AppEventsConstants.EVENT_NAME_VIEWED_CONTENT, price, params)
-            }
-            "logAddToCart" -> {
-                logger.logEvent(AppEventsConstants.EVENT_NAME_ADDED_TO_CART, price, params)
-            }
-            "logAddToWishlist" -> {
-                logger.logEvent(AppEventsConstants.EVENT_NAME_ADDED_TO_WISHLIST, price, params)
-            }
+        if (action != null) {
+            appEventsLogger.logPushNotificationOpen(payloadBundle, action)
+        } else {
+            appEventsLogger.logPushNotificationOpen(payloadBundle)
         }
+
+        result.success(null)
     }
 
-    private fun logPurchase(amount: Double, currency: String, parameters: HashMap<String, String>) {
-        logger.logPurchase(amount.toBigDecimal(), Currency.getInstance(currency), createBundleFromMap(parameters))
-    }
-
-    private fun initFbSdk() {
-        FacebookSdk.setAutoInitEnabled(true)
-        FacebookSdk.fullyInitialize()
-        //logger = AppEventsLogger.newLogger(context)
-
-        // val targetUri = AppLinks.getTargetUrlFromInboundIntent(context, activityPluginBinding!!.activity.intent)
-        AppLinkData.fetchDeferredAppLinkData(context, object : AppLinkData.CompletionHandler {
-            override fun onDeferredAppLinkDataFetched(appLinkData: AppLinkData?) {
-
-                if (appLinkData == null) {
-                    return;
-                }
-
-                deepLinkUrl = appLinkData.targetUri.toString();
-                if (eventSink != null) {
-                    eventSink!!.success(deepLinkUrl)
-                }
-            }
-
-        })
+    private fun handleSetUserId(call: MethodCall, result: Result) {
+        val id = call.arguments as String
+        AppEventsLogger.setUserID(id)
+        result.success(null)
     }
 
     private fun createBundleFromMap(parameterMap: Map<String, Any>?): Bundle? {
@@ -234,6 +210,50 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
             }
         }
         return bundle
+    }
+
+    private fun handleSetAutoLogAppEventsEnabled(call: MethodCall, result: Result) {
+        val enabled = call.arguments as Boolean
+        FacebookSdk.setAutoLogAppEventsEnabled(enabled)
+        result.success(null)
+    }
+
+    private fun handleSetDataProcessingOptions(call: MethodCall, result: Result) {
+        val options = call.argument("options") as? ArrayList<String> ?: arrayListOf()
+        val country = call.argument("country") as? Int ?: 0
+        val state = call.argument("state") as? Int ?: 0
+
+        FacebookSdk.setDataProcessingOptions(options.toTypedArray(), country, state)
+        result.success(null)
+    }
+
+    private fun handlePurchased(call: MethodCall, result: Result) {
+        var amount = (call.argument("amount") as? Double)?.toBigDecimal()
+        var currency = Currency.getInstance(call.argument("currency") as? String)
+        val parameters = call.argument("parameters") as? Map<String, Object>
+        val parameterBundle = createBundleFromMap(parameters) ?: Bundle()
+
+        appEventsLogger.logPurchase(amount, currency, parameterBundle)
+        result.success(true)
+    }
+
+    private fun initFbSdk(result: Result) {
+        FacebookSdk.setAutoInitEnabled(true)
+        FacebookSdk.fullyInitialize()
+        AppLinkData.fetchDeferredAppLinkData(context, object : AppLinkData.CompletionHandler {
+            override fun onDeferredAppLinkDataFetched(appLinkData: AppLinkData?) {
+
+                if (appLinkData == null) {
+                    return;
+                }
+
+                deepLinkUrl = appLinkData.targetUri.toString();
+                if (eventSink != null) {
+                    eventSink!!.success(deepLinkUrl)
+                }
+            }
+        })
+        result.success(true)
     }
 
     override fun onDetachedFromActivity() {

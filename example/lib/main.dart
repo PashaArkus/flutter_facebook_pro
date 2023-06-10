@@ -45,8 +45,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> logViewContent() async {
-    await facebookDeepLinks!.logViewedContent(
-        contentType: "Product", contentData: "Nestle Milkpak", contentId: "NST135", currency: "PKR", price: 160);
+    await facebookDeepLinks!.logViewContent(
+        type: "Product", id: "NST135", currency: "PKR", price: 160);
   }
 
   Future<void> logAddToCart() async {
@@ -56,14 +56,11 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> logAddToWishlist() async {
     await facebookDeepLinks!.logAddToWishlist(
-        contentType: "Product", contentData: "Nestle Milkpak", contentId: "NST135", currency: "PKR", price: 160);
+        currency: "PKR", price: 160, id: 'NST135', type: 'Product');
   }
 
   Future<void> logPurchase() async {
-    await facebookDeepLinks!.logPurhcase(amount: 669, currency: "PKR", params: {
-      'content-type': "product_group",
-      'num-items': 56,
-    });
+    await facebookDeepLinks!.logPurchase(amount: 669, currency: "PKR");
   }
 
   Future<void> logCompleteRegistration() async {
@@ -95,12 +92,12 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Future<void> logEvent({required String eventName, double? valueToSum, dynamic? parameters}) async {
+  Future<void> logEvent({required String eventName, double? valueToSum, dynamic parameters}) async {
     await facebookDeepLinks!.logEvent(eventName: eventName, parameters: parameters, valueToSum: valueToSum);
   }
 
   Future<void> setAdvertiserTracking() async {
-    await facebookDeepLinks!.setAdvertiserTracking(isEnabled: !isAdvertisingTrackingEnabled);
+    await facebookDeepLinks!.setAdvertiserTracking(enabled: !isAdvertisingTrackingEnabled);
     setState(() {
       isAdvertisingTrackingEnabled = !isAdvertisingTrackingEnabled;
     });
