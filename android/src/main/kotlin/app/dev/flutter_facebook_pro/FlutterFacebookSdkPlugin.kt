@@ -62,7 +62,7 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
         eventChannel.setStreamHandler(this)
 
         context = flutterPluginBinding.applicationContext
-//        logger = AppEventsLogger.newLogger(context);
+        logger = context as? Context?.let { AppEventsLogger.newLogger(it) }
     }
 
 
@@ -187,7 +187,7 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
     private fun initFbSdk() {
         FacebookSdk.setAutoInitEnabled(true)
         FacebookSdk.fullyInitialize()
-        logger = AppEventsLogger.newLogger(context)
+        //logger = AppEventsLogger.newLogger(context)
 
         // val targetUri = AppLinks.getTargetUrlFromInboundIntent(context, activityPluginBinding!!.activity.intent)
         AppLinkData.fetchDeferredAppLinkData(context, object : AppLinkData.CompletionHandler {
