@@ -60,8 +60,9 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
 
         eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, EVENTS_CHANNEL)
         eventChannel.setStreamHandler(this)
-        logger = AppEventsLogger.newLogger(this);
+
         context = flutterPluginBinding.applicationContext
+        logger = AppEventsLogger.newLogger(context);
     }
 
 
