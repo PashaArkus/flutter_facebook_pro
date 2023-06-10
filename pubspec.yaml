@@ -1,7 +1,7 @@
 name: flutter_facebook_pro
 description: A new Flutter package project.
-version: 0.0.1
-homepage: https://github.com/marusamirox/flutter_facebook_pro
+version: 0.0.2
+homepage: https://github.com/PashaArkus/flutter_facebook_pro
 
 environment:
   sdk: '>=2.19.6 <4.0.0'
