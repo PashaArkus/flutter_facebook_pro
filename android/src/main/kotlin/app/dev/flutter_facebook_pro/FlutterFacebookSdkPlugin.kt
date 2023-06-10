@@ -75,6 +75,9 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
 
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
+            "getPlatformVersion" -> {
+                result.success("Android ${android.os.Build.VERSION.RELEASE}")
+            }
             "clearUserData" -> handleClearUserData(call, result)
             "setUserData" -> handleSetUserData(call, result)
             "clearUserID" -> handleClearUserId(call, result)
