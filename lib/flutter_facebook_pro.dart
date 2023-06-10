@@ -91,11 +91,6 @@ class FlutterFacebookPro {
     return true;
   }
 
-  /// Init Facebook SDK
-  Future<bool?> initSdk() async {
-    return await _channel.invokeMethod("initFbSdk");
-  }
-
   /// Returns the app ID this logger was configured to log to.
   Future<String?> getApplicationId() {
     return _channel.invokeMethod<String>('getApplicationId');

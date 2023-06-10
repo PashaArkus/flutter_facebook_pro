@@ -88,8 +88,6 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
             "getAnonymousId" -> handleGetAnonymousId(call, result)
             "logPurchase" -> handlePurchased(call, result)
             "setAdvertiserTracking" -> handleSetAdvertiserTracking(call, result)
-            "initFbSdk" -> initFbSdk(result)
-
             else -> result.notImplemented()
         }
     }
@@ -237,7 +235,7 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
         result.success(true)
     }
 
-    private fun initFbSdk(result: Result) {
+    private fun initFbSdk() {
         FacebookSdk.setAutoInitEnabled(true)
         FacebookSdk.fullyInitialize()
         AppLinkData.fetchDeferredAppLinkData(context, object : AppLinkData.CompletionHandler {
@@ -253,7 +251,6 @@ class FlutterFacebookSdkPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
                 }
             }
         })
-        result.success(true)
     }
 
     override fun onDetachedFromActivity() {
