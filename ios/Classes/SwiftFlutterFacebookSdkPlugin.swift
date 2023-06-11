@@ -172,43 +172,43 @@ public class SwiftFlutterFacebookSdkPlugin: NSObject, FlutterPlugin, FlutterStre
     }
 
     private func handleClearUserData(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-            AppEvents.shared.clearUserData()
+            AppEvents.clearUserData()
             result(nil)
         }
 
     private func handleSetUserData(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         let arguments = call.arguments as? [String: Any] ?? [String: Any]()
 
-        AppEvents.shared.setUserData(arguments["email"] as? String, forType: FBSDKAppEventUserDataType.email)
-        AppEvents.shared.setUserData(arguments["firstName"] as? String, forType: FBSDKAppEventUserDataType.firstName)
-        AppEvents.shared.setUserData(arguments["lastName"] as? String, forType: FBSDKAppEventUserDataType.lastName)
-        AppEvents.shared.setUserData(arguments["phone"] as? String, forType: FBSDKAppEventUserDataType.phone)
-        AppEvents.shared.setUserData(arguments["dateOfBirth"] as? String, forType: FBSDKAppEventUserDataType.dateOfBirth)
-        AppEvents.shared.setUserData(arguments["gender"] as? String, forType: FBSDKAppEventUserDataType.gender)
-        AppEvents.shared.setUserData(arguments["city"] as? String, forType: FBSDKAppEventUserDataType.city)
-        AppEvents.shared.setUserData(arguments["state"] as? String, forType: FBSDKAppEventUserDataType.state)
-        AppEvents.shared.setUserData(arguments["zip"] as? String, forType: FBSDKAppEventUserDataType.zip)
-        AppEvents.shared.setUserData(arguments["country"] as? String, forType: FBSDKAppEventUserDataType.country)
+        AppEvents.setUserData(arguments["email"] as? String, forType: FBSDKAppEventUserDataType.email)
+        AppEvents.setUserData(arguments["firstName"] as? String, forType: FBSDKAppEventUserDataType.firstName)
+        AppEvents.setUserData(arguments["lastName"] as? String, forType: FBSDKAppEventUserDataType.lastName)
+        AppEvents.setUserData(arguments["phone"] as? String, forType: FBSDKAppEventUserDataType.phone)
+        AppEvents.setUserData(arguments["dateOfBirth"] as? String, forType: FBSDKAppEventUserDataType.dateOfBirth)
+        AppEvents.setUserData(arguments["gender"] as? String, forType: FBSDKAppEventUserDataType.gender)
+        AppEvents.setUserData(arguments["city"] as? String, forType: FBSDKAppEventUserDataType.city)
+        AppEvents.setUserData(arguments["state"] as? String, forType: FBSDKAppEventUserDataType.state)
+        AppEvents.setUserData(arguments["zip"] as? String, forType: FBSDKAppEventUserDataType.zip)
+        AppEvents.setUserData(arguments["country"] as? String, forType: FBSDKAppEventUserDataType.country)
 
         result(nil)
     }
 
     private func handleClearUserID(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        AppEvents.shared.userID = nil
+        AppEvents.userID = nil
         result(nil)
     }
 
     private func handleFlush(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        AppEvents.shared.flush()
+        AppEvents.flush()
         result(nil)
     }
 
     private func handleGetApplicationId(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        result(Settings.shared.appID)
+        result(Settings.appID)
     }
 
     private func handleHandleGetAnonymousId(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        result(AppEvents.shared.anonymousID)
+        result(AppEvents.anonymousID)
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
